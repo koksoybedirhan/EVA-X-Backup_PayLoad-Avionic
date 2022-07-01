@@ -32,7 +32,7 @@ int eskiZaman3 = 0;
 unsigned long irtifaZaman;
 double latitude,longtitude, altitude;
 char dorjiAdres[4] = "EVA", latchar[10], altchar[7], longchar[10], bmpchar[7], bmechar[7];
-String dorjiGonderim = "EVA";
+String dorjiGonderim = "EVA", bosluk = ",";
 
 void setup()
 {
@@ -95,6 +95,7 @@ void loop()
   {
     dorjifonk(); //dorji seri porttan aldığı veriyi direkt gönderiyor
     eskiZaman2 = dorjiZaman;
+    buzzerHigh();
   }
   if(irtifaZaman-eskiZaman3 > 1000)
   {
@@ -121,13 +122,17 @@ void ayrilmafonk()
     servofonk1();
     Serial.println("First Seperation Done.");
     birinciayrilma = true;
-    buzzerHigh();
+    buzzerHigh(); //2900 metreye kadar buzzer ötecek
+  }
+  else if(bmpkalm >= 3000 && bmekalm >= 3000 && birinciayrilma == true)
+  {
+    buzzerLow(); //100 metrelik kısımda buzzer ses çıkartarak test süresi için bilgi verecek.
   }
   else if(bmpkalm <= 500 && bmekalm <= 500 && birinciayrilma == true)//ikinci ayrılma
   {
     servofonk2();
     Serial.println("500 meters detected with pressure, Second Seperation done");
-    buzzerLow();
+    buzzerHigh(); // 500 metreden sonra yere düşünce bulması kolaylaştırılacak.
   }
 }
 
@@ -224,6 +229,6 @@ void buzzerLow()
 void dorjifonk()
 {
   //Verilerin karışmaması için EVA ile başlamayan string'leri okumayacak.
-  dorjiGonderim = "dorjiAdres + latitude + longtitude + altitude + bmpstring + bmestring";
+  dorjiGonderim = "dorjiAdres + bosluk + latitude + bosluk + longtitude + bosluk + altitude + bosluk + bmpstring + bosluk + bmestring";
   Serial.println(dorjiGonderim);
 }

@@ -151,6 +151,10 @@ void ayrilmafonk()
     Serial.println("500 meters detected with pressure, Second Seperation done");
     buzzerHigh(); // 500 metreden sonra yere düşünce bulması kolaylaştırılacak.
   }
+  else if(bmpkalm <= 300 && bmekalm <= 300 && birinciayrilma == true)
+  {
+    digitalWrite(valf2, LOW);
+  }
 }
 
 void aktiflik3()

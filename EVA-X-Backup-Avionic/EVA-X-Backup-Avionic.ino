@@ -1,21 +1,24 @@
-//kütüphaneler
+//Kütüphaneler
 #include <Wire.h>
 #include <SFE_BMP180.h>
 #include "SparkFunBME280.h" 
-#include "ServoTimer2.h"
 #include <SimpleKalmanFilter.h>
 #include "TinyGPS++.h"
 
-//tanımlamalar
+//Tanımlamalar
 BME280 bme280;
 SFE_BMP180 bmp180;
-ServoTimer2 servoM1;
-ServoTimer2 servoM2;
 SimpleKalmanFilter Kalmanbasinci(1, 1, 0.01);
 TinyGPSPlus gps;
 
-//tanımlar
+//Pinler
+int buzzerPin = 42; //Mega Pro'ya göre ayarlanacak
+int valf1 = 29; //Mega Pro'ya göre ayarlanacak
+int valf2 = 30; //Mega Pro'ya göre ayarlanacak
+
+//Tanımlar
 char durum;
+int aktiflikDurumu = 1;
 double T, bmp180basinc, bme280basinc;
 double bmp180convert, bmpkalmanolculenbasinc, bmekalmanolculenbasinc;
 int pos = 0; 
@@ -23,16 +26,19 @@ double bmpbasincIrtifa, bmebasincdegeri;
 double bmpIrtifaDegeri, bmeIrtifaDegeri, Irtifafonk, denizbasinci = 966.6;
 bool birinciayrilma = false;
 double bmekalm, bmpkalm;
-int buzzerPin = 7; //Mega Pro'ya göre ayarlanacak
 int eskiZaman1 = 0;
 int gpsZaman;
 int eskiZaman2 = 0;
 unsigned long dorjiZaman;
 int eskiZaman3 = 0;
+int zamanOlcme1 = 0;
+int zamanOlcme2 = 0;
 unsigned long irtifaZaman;
 double latitude,longtitude, altitude;
+
+//Telemetri Tanımlamaları
 char dorjiAdres[4] = "EVA", latchar[10], altchar[7], longchar[10], bmpchar[7], bmechar[7];
-String dorjiGonderim = "EVA", bosluk = ",";
+String dorjiGonderim = "EVA", bosluk = ",", durumstring;
 
 void setup()
 {
@@ -40,11 +46,10 @@ void setup()
   Serial2.begin(9600);
   Wire.begin();
   bme280.setI2CAddress(0x76); 
-  servoM1.attach(9);
-  servoM2.attach(10);
   pinMode(13, OUTPUT); // led yakarak hata bakma
+  pinMode(valf1, OUTPUT); //valf1
+  pinMode(valf2, OUTPUT); //valf2
   //Serial.print("Sensörler Başlatılıyor ");
-  
   if(bme280.beginI2C() == false) 
   {
     //Serial.print("BME280 başlatılmadı. ");
@@ -67,6 +72,8 @@ void setup()
     pinMode(13, LOW);
   }
 
+  durumstring = String(aktiflikDurumu);
+  
   //Serial.println("Kalman filtresi uygulandı.");
 
   bmpbasincIrtifa = bmp180fonk();
@@ -113,26 +120,44 @@ void loop()
     
     eskiZaman3 = irtifaZaman;
   }
+  zamanOlcme1 = millis();
+  aktiflik3();
+  zamanOlcme2 = millis();
 }
 
 void ayrilmafonk()
 {
   if(bmpkalm >= 3000 && bmekalm >= 3000 && birinciayrilma == false) //birinci ayrılma
   {
-    servofonk1();
+    digitalWrite(valf1, HIGH); //2900 metreye kadar açık kalacak
     Serial.println("First Seperation Done.");
     birinciayrilma = true;
+    aktiflikDurumu = 2;
     buzzerHigh(); //2900 metreye kadar buzzer ötecek
   }
-  else if(bmpkalm >= 3000 && bmekalm >= 3000 && birinciayrilma == true)
-  {
-    buzzerLow(); //100 metrelik kısımda buzzer ses çıkartarak test süresi için bilgi verecek.
+  else if(bmpkalm <= 2900 && bmekalm <= 2900 && birinciayrilma == true)
+  { //100 metreden sonra aktiflikler kaldırılacak.
+    digitalWrite(valf1, LOW);
+    buzzerLow(); 
+  }
+  else if(zamanOlcme1 - zamanOlcme2 == 30000)
+  {//30000 tahmini değer. Roketin paraşütsüz 3000 metre çıkıp 2000'e düşüşü hesaplanıp yazılacak.
+    aktiflikDurumu = 3;
   }
   else if(bmpkalm <= 500 && bmekalm <= 500 && birinciayrilma == true)//ikinci ayrılma
   {
-    servofonk2();
+    digitalWrite(valf2, HIGH);
+    aktiflikDurumu = 4;
     Serial.println("500 meters detected with pressure, Second Seperation done");
     buzzerHigh(); // 500 metreden sonra yere düşünce bulması kolaylaştırılacak.
+  }
+}
+
+void aktiflik3()
+{
+  if(bmpkalm <=2000 && bmekalm<=2000 && birinciayrilma == true)
+  {
+    digitalWrite(13, HIGH);
   }
 }
 
@@ -180,32 +205,6 @@ double bme280fonk()
   return(Irtifafonk);
 }
 
-void servofonk1()
-{
-  for (pos = 0; pos <= 90; pos += 1) 
-  {                
-    servoM1.write(pos);              
-    delay(15);                       
-  }
-  for (pos = 90; pos >= 0; pos -= 1) { 
-    servoM1.write(pos);             
-    delay(15);                      
-  }
-}
-
-void servofonk2()
-{
-  for (pos = 0; pos <= 90; pos += 1) 
-  {                
-    servoM2.write(pos);              
-    delay(15);                       
-  }
-  for (pos = 90; pos >= 0; pos -= 1) { 
-    servoM2.write(pos);             
-    delay(15);                      
-  }
-}
-
 void buzzerHigh()
 {
   digitalWrite(buzzerPin, HIGH);
@@ -228,7 +227,8 @@ void buzzerLow()
 
 void dorjifonk()
 {
+  durumstring = String(aktiflikDurumu);
   //Verilerin karışmaması için EVA ile başlamayan string'leri okumayacak.
-  dorjiGonderim = "dorjiAdres + bosluk + latitude + bosluk + longtitude + bosluk + altitude + bosluk + bmpstring + bosluk + bmestring";
+  dorjiGonderim = "dorjiAdres + bosluk + latitude + bosluk + longtitude + bosluk + altitude + bosluk + bmpstring + bosluk + bmestring + aktiflik durumu";
   Serial.println(dorjiGonderim);
 }

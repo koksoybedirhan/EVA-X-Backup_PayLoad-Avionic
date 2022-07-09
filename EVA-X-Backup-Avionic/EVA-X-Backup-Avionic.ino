@@ -19,15 +19,15 @@ int valf2 = 30; //Mega Pro'ya göre ayarlanacak
 //Tanımlar
 char durum;
 int aktiflikDurumu = 1;
-double T, bmp180basinc, bme280basinc;
+double T, bmp180basinc, bme280basinc, bmpmaks = 0;
 double bmp180convert, bmpkalmanolculenbasinc, bmekalmanolculenbasinc;
 int pos = 0; 
 double bmpbasincIrtifa, bmebasincdegeri;
 double bmpIrtifaDegeri, bmeIrtifaDegeri, Irtifafonk, denizbasinci = 966.6;
 bool birinciayrilma = false;
 double bmekalm, bmpkalm;
-int eskiZaman1 = 0;
-int gpsZaman;
+int eskiZaman1 = 0, ayrilmaEskiZaman = 0;
+int gpsZaman, ayrilmaYeniZaman;
 int eskiZaman2 = 0;
 unsigned long dorjiZaman;
 int eskiZaman3 = 0;
@@ -80,14 +80,16 @@ void setup()
 }
 
 void loop()
-{  
-  gpsZaman = millis(); 
-  dorjiZaman = millis(); 
-  irtifaZaman = millis(); 
-  if(gpsZaman-eskiZaman1 > 1000)
-  {  
+{ 
+  while(Serial2.available())//Yedek aviyonik için en önemli isteri GPS verisi olduğu için ilk olarak GPS'nin kesin çalıştığından emin olunacak. 
+  {//Yapılan testler sonucunda GPS'in ortak çalışamadığı gözlemlenmiştir.
     if(gps.encode(Serial2.read()))
-    {
+    { 
+    gpsZaman = millis(); 
+    dorjiZaman = millis(); 
+    irtifaZaman = millis(); 
+    if(gpsZaman-eskiZaman1 > 1000)
+    {  
       latitude = gps.location.lat(), 6;
       dtostrf(latitude, 9, 6, latchar);
       longtitude = gps.location.lng(), 6;
@@ -95,47 +97,58 @@ void loop()
       altitude = gps.altitude.meters(), 6;
       dtostrf(altitude, 6, 1, altchar);
       //GpsEncode();
+      eskiZaman1 = gpsZaman;
     }
-    eskiZaman1 = gpsZaman;
-  }
-  if(dorjiZaman-eskiZaman2 > 1000)
-  {
-    dorjifonk(); //dorji seri porttan aldığı veriyi direkt gönderiyor
-    eskiZaman2 = dorjiZaman;
-    buzzerHigh();
-  }
-  if(irtifaZaman-eskiZaman3 > 1000)
-  {
-    bmpkalm = bmpkalman();
-    bmekalm = bmekalman();
-    dtostrf(bmpkalm, 6, 1, bmpchar);
-    dtostrf(bmekalm, 6, 1, bmechar);
-    /*Serial.print("BMP180 Kalman İrtifa: ");
-    Serial.print(bmpkalm, 1);
-    Serial.print(" metre ");
-    Serial.print("BME280 Kalman İrtifa: ");
-    Serial.print(bmekalm, 1);
-    Serial.println(" metre ");*/
-    ayrilmafonk();
+    if(dorjiZaman-eskiZaman2 > 1000)
+    {
+      dorjifonk(); //dorji seri porttan aldığı veriyi direkt gönderiyor
+      eskiZaman2 = dorjiZaman;
+      buzzerHigh();
+    }
+    if(irtifaZaman-eskiZaman3 > 1000)
+    {
+      bmpkalm = bmpkalman();
+      bmekalm = bmekalman();
+      dtostrf(bmpkalm, 6, 1, bmpchar);
+      dtostrf(bmekalm, 6, 1, bmechar);
+      if(bmpkalm>bmpmaks)
+      {
+        bmpkalm = bmpmaks;
+      }
+      /*Serial.print("BMP180 Kalman İrtifa: ");
+      Serial.print(bmpkalm, 1);
+      Serial.print(" metre ");
+      Serial.print("BME280 Kalman İrtifa: ");
+      Serial.print(bmekalm, 1);
+      Serial.println(" metre ");*/
+      ayrilmafonk();
+      
+      eskiZaman3 = irtifaZaman;
+    }
     
-    eskiZaman3 = irtifaZaman;
+    zamanOlcme1 = millis();
+    aktiflik3();
+    zamanOlcme2 = millis();
+    }
   }
-  zamanOlcme1 = millis();
-  aktiflik3();
-  zamanOlcme2 = millis();
 }
 
 void ayrilmafonk()
 {
-  if(bmpkalm >= 3000 && bmekalm >= 3000 && birinciayrilma == false) //birinci ayrılma
-  {
-    digitalWrite(valf1, HIGH); //2900 metreye kadar açık kalacak
-    Serial.println("First Seperation Done.");
-    birinciayrilma = true;
-    aktiflikDurumu = 2;
-    buzzerHigh(); //2900 metreye kadar buzzer ötecek
+  ayrilmayeniZaman = millis();
+  if(bmpkalm-bmpmaks==50 && bmekalm >= 3000 && birinciayrilma == false) //birinci ayrılma
+  {//Bir sensör maks irtifaya ulaşıldığını hesaplayarak ayrılma yaparken diğeri 3000 metre ile ayrılma yapacak.
+    delay(5000); //Birinci ayrılma için 5 saniye bekleniyor. Eğer 5 saniye sonra hala ayrılma olmazsa ayrılma gerçekleşecek.
+    if(bmpkalm-bmpmaks==50 && bmekalm >= 3000)
+    {
+      digitalWrite(valf1, HIGH); //2900 metreye kadar açık kalacak
+      Serial.println("First Seperation Done.");
+      birinciayrilma = true;
+      aktiflikDurumu = 2;
+      buzzerHigh(); //2900 metreye kadar buzzer ötecek
+    }
   }
-  else if(bmpkalm <= 2900 && bmekalm <= 2900 && birinciayrilma == true)
+  else if(bmpkalm-bmpmaks==250 && bmekalm <= 2900 && birinciayrilma == true)
   { //100 metreden sonra aktiflikler kaldırılacak.
     digitalWrite(valf1, LOW);
     buzzerLow(); 

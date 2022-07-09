@@ -82,7 +82,7 @@ void setup()
 void loop()
 { 
   while(Serial2.available())//Yedek aviyonik için en önemli isteri GPS verisi olduğu için ilk olarak GPS'nin kesin çalıştığından emin olunacak. 
-  {//Yapılan testler sonucunda GPS'in ortak çalışamadığı gözlemlenmiştir.
+  {//Yapılan testler sonucunda GPS'in ortak çalışamadığı bundan dolayı ilk olarak GPS'in açılması gerektiği gözlemlenmiştir.
     if(gps.encode(Serial2.read()))
     { 
     gpsZaman = millis(); 

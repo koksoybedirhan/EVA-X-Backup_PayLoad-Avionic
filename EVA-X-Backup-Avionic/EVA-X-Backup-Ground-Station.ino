@@ -12,7 +12,7 @@ void loop()
   {    
     okunan = Serial.readString();
     okunan.toCharArray(son, 50);
-    if(son[0] == "E" && son[1] == "V" && son[2] == "A") 
+    if(son[0] == 'E' && son[1] == 'V' && son[2] == 'A') 
     {//Gelen Verilerin EVA X takımı tarafından geldiğinin kontrolü
       Serial.println(son);
     }

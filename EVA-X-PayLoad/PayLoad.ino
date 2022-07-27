@@ -1,87 +1,82 @@
 //kutuphaneler
-#include <Wire.h>
-#include "TinyGPS++.h"
-#include "SparkFunBME280.h"
+#include "Arduino.h"
 #include "LoRa_E32.h"
+#include "TinyGPS++.h"
+#include <SoftwareSerial.h>
+#include <Adafruit_BMP280.h>
 #include <SimpleKalmanFilter.h>
-BME280 bme; //Uses I2C address 0x76 (jumper closed)
-SimpleKalmanFilter KalmanIrtifa(1, 1, 0.01);
-TinyGPSPlus gps;
+
+//kutuphane tanimlari
 SoftwareSerial portLora(19, 18);
 LoRa_E32 e32ttl(&portLora);
+TinyGPSPlus gps;
+SimpleKalmanFilter kalmanIrtifa(1, 1, 0.01);
+Adafruit_BMP280 bmp;
 
-//tanimlamalar
-float bmebasinc, irtifa, kalman, nem, sicaklik;
-float denizbasinc = 966.6;
+float sicaklik, basinc, basincirtifa, kalman, s, i; 
+float denizbasinc = 1001.25; //aksaraya göre hesaplanacak.
 
+//lora paketi
 typedef struct {
-byte altitude[5];
-byte latitude[10];
-byte longtitude[10];
-//byte kalman[7];
-//byte sicaklik[5];
-//byte nem[5];
+byte alt[7];
+byte lat[10];
+byte lng[10];
+byte irt[8];
+byte sic[6];
 } Signal;
 Signal data;
 
-void setup() {
+void setup() 
+{
   Serial.begin(9600);
-  Serial1.begin(9600);
+  delay(500);
   Serial2.begin(9600);
-  /*Basınç, sıcaklık ve nem hakem tarafından istenirse kullanılacak.
-  Wire.begin();
-  bme.setI2CAddress(0x76); //Connect to a second sensor
-
-  if(bme.beginI2C() == true)
-  {
-    Serial.println("BME connected");
-  }
-  if(bme.beginI2C() == false) 
-  {
-    Serial.println("BME not connected");
-  }*/
+  delay(500);
+  e32ttl.begin();
+  bmp.begin(0x77,0x60);
+  bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,    
+                  Adafruit_BMP280::SAMPLING_X2,    
+                  Adafruit_BMP280::SAMPLING_X16,  
+                  Adafruit_BMP280::FILTER_X16,      
+                  Adafruit_BMP280::STANDBY_MS_500); 
 }
 
 void loop() 
 {
+  s = sicak();
+  i = irtifa();
   while(Serial2.available())
   {
     if(gps.encode(Serial2.read()))
     {
-      String GPSokunan = Serial2.readStringUntil('\r');
-      Serial.println(GPSokunan);
+      String msg = Serial2.readStringUntil('\r');
+      //Serial.println(msg);
       Serial.print("LAT="); Serial.println(gps.location.lat(), 6);
-      *(float*)(data.latitude) = (gps.location.lat());
       Serial.print("LONG="); Serial.println(gps.location.lng(), 6);
-      *(float*)(data.longtitude) = (gps.location.lng());
-      Serial.print("ALT="); Serial.println(gps.altitude.meters(), 1);
-      *(float*)(data.altitude) = (gps.altitude.meters());
-      delay(4*1000); //Sure denenecek.
+      Serial.print("ALT="); Serial.println(gps.altitude.meters(), 6);
+      Serial.println(s); Serial.println(i);
+      *(float*)(data.alt) = (float)gps.altitude.meters();
+      *(float*)(data.lat) = (float)gps.location.lng();
+      *(float*)(data.lng) = (float)gps.location.lat();
+      *(float*)(data.irt) = (float)s;
+      *(float*)(data.sic) = (float)i;
+      ResponseStatus rs = e32ttl.sendFixedMessage(0, 7, 17, &data, sizeof(Signal));
+      Serial.println(rs.getResponseDescription());
+      delay(4000);
     }
-    ResponseStatus rs = e32ttl.sendFixedMessage(0, 14, 29, &data, sizeof(Signal));
-    Serial.println(rs.getResponseDescription());
-    delay(650);
   }
 }
 
-/* Şartnamede istenilen ama hyi'de istenilmeyen veriler.
-void irtifaFonk()
+double sicak()
 {
-  bmebasinc = bme.readFloatPressure()/101325, 4;
-  irtifa = 44330*(1.0-pow(bmebasinc/denizbasinc,0.1903));
-  kalman = KalmanIrtifa.updateEstimate(irtifa);
-  return kalman;
-}
-
-void nemFonk()
-{
-  nem = bme.readFloatHumidity(), 0);
-  return nem;
-}
-
-void sicaklikFonk()
-{
-  sicaklik = bme.readTempC(), 2);
+  sicaklik = bmp.readTemperature();
   return sicaklik;
 }
-*/
+
+double irtifa()
+{
+  basinc = bmp.readPressure()/101325, 4;
+  basincirtifa = 44330*(1.0-pow(basinc/denizbasinc,0.1903));
+  kalman = kalmanIrtifa.updateEstimate(basincirtifa);
+  return kalman;
+}

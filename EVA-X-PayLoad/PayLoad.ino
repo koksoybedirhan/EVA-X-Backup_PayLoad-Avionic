@@ -3,6 +3,7 @@
 #include "TinyGPS++.h"
 #include "SparkFunBME280.h"
 #include "LoRa_E32.h"
+#include <SimpleKalmanFilter.h>
 BME280 bme; //Uses I2C address 0x76 (jumper closed)
 SimpleKalmanFilter KalmanIrtifa(1, 1, 0.01);
 TinyGPSPlus gps;
@@ -57,7 +58,10 @@ void loop()
       *(float*)(data.altitude) = (gps.altitude.meters());
       delay(4*1000); //Sure denenecek.
     }
-  }  
+    ResponseStatus rs = e32ttl.sendFixedMessage(0, 14, 29, &data, sizeof(Signal));
+    Serial.println(rs.getResponseDescription());
+    delay(650);
+  }
 }
 
 /* Şartnamede istenilen ama hyi'de istenilmeyen veriler.

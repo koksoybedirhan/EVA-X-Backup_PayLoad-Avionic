@@ -25,9 +25,9 @@ int pos = 0;
 double bmpbasincIrtifa, bmebasincdegeri;
 double bmpIrtifaDegeri, bmeIrtifaDegeri, Irtifafonk, denizbasinci = 966.6;
 bool birinciayrilma = false;
-double bmekalm, bmpkalm;
+double bmekalm, bmpkalm, b;
 int eskiZaman1 = 0, ayrilmaEskiZaman = 0;
-int gpsZaman, ayrilmaYeniZaman;
+int gpsZaman, ayrilmayeniZaman;
 int eskiZaman2 = 0;
 unsigned long dorjiZaman;
 int eskiZaman3 = 0;
@@ -96,14 +96,14 @@ void loop()
       dtostrf(longtitude, 9, 6, longchar);
       altitude = gps.altitude.meters(), 6;
       dtostrf(altitude, 6, 1, altchar);
-      //GpsEncode();
+      GpsEncode();
       eskiZaman1 = gpsZaman;
     }
     if(dorjiZaman-eskiZaman2 > 1000)
     {
       dorjifonk(); //dorji seri porttan aldığı veriyi direkt gönderiyor
       eskiZaman2 = dorjiZaman;
-      buzzerHigh();
+      //buzzerHigh();
     }
     if(irtifaZaman-eskiZaman3 > 1000)
     {
@@ -111,21 +111,15 @@ void loop()
       bmekalm = bmekalman();
       dtostrf(bmpkalm, 6, 1, bmpchar);
       dtostrf(bmekalm, 6, 1, bmechar);
-      if(bmpkalm>bmpmaks)
-      {
-        bmpkalm = bmpmaks;
-      }
-      /*Serial.print("BMP180 Kalman İrtifa: ");
+      Serial.print("BMP180 Kalman İrtifa: ");
       Serial.print(bmpkalm, 1);
       Serial.print(" metre ");
       Serial.print("BME280 Kalman İrtifa: ");
       Serial.print(bmekalm, 1);
-      Serial.println(" metre ");*/
+      Serial.println(" metre ");   
       ayrilmafonk();
-      
       eskiZaman3 = irtifaZaman;
     }
-    
     zamanOlcme1 = millis();
     aktiflik3();
     zamanOlcme2 = millis();
@@ -136,10 +130,10 @@ void loop()
 void ayrilmafonk()
 {
   ayrilmayeniZaman = millis();
-  if(bmpkalm-bmpmaks==50 && bmekalm >= 3000 && birinciayrilma == false) //birinci ayrılma
+  if(bmpkalm >= 3000 && bmekalm >= 3000 && birinciayrilma == false) //birinci ayrılma
   {//Bir sensör maks irtifaya ulaşıldığını hesaplayarak ayrılma yaparken diğeri 3000 metre ile ayrılma yapacak.
     delay(5000); //Birinci ayrılma için 5 saniye bekleniyor. Eğer 5 saniye sonra hala ayrılma olmazsa ayrılma gerçekleşecek.
-    if(bmpkalm-bmpmaks==50 && bmekalm >= 3000)
+    if(bmekalm >= 3000 && bmekalm >= 3000)
     {
       digitalWrite(valf1, HIGH); //2900 metreye kadar açık kalacak
       Serial.println("First Seperation Done.");
@@ -148,7 +142,7 @@ void ayrilmafonk()
       buzzerHigh(); //2900 metreye kadar buzzer ötecek
     }
   }
-  else if(bmpkalm-bmpmaks==250 && bmekalm <= 2900 && birinciayrilma == true)
+  else if(bmekalm <= 2900 && bmekalm <= 2900 && birinciayrilma == true)
   { //100 metreden sonra aktiflikler kaldırılacak.
     digitalWrite(valf1, LOW);
     buzzerLow(); 
@@ -234,18 +228,18 @@ void buzzerLow()
   Serial.println("Buzzer Aktif Edilmedi");
 }
 
-/*void GpsEncode()
+void GpsEncode()
 {
   String msg = Serial2.readStringUntil('\r');
   Serial.print("LAT="); Serial.println(gps.location.lat(), 6);
   Serial.print("LONG="); Serial.println(gps.location.lng(), 6);
   Serial.print("ALT="); Serial.println(gps.altitude.meters(), 6);
-}*/    
+}  
 
 void dorjifonk()
 {
   durumstring = String(aktiflikDurumu);
   //Verilerin karışmaması için EVA ile başlamayan string'leri okumayacak.
   dorjiGonderim = "dorjiAdres + bosluk + latitude + bosluk + longtitude + bosluk + altitude + bosluk + bmpstring + bosluk + bmestring + aktiflik durumu";
-  Serial.println(dorjiGonderim);
+  //Serial.println(dorjiGonderim);
 }

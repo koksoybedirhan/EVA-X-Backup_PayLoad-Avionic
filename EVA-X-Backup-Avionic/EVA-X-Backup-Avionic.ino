@@ -34,15 +34,16 @@ int eskiZaman3 = 0;
 int zamanOlcme1 = 0;
 int zamanOlcme2 = 0;
 unsigned long irtifaZaman;
-double latitude,longtitude, altitude;
+double latitude,longitude, altitude;
 
 //Telemetri Tanımlamaları
 char dorjiAdres[4] = "EVA", latchar[10], altchar[7], longchar[10], bmpchar[7], bmechar[7];
-String dorjiGonderim = "EVA", bosluk = ",", durumstring;
+String dorjiGonderim = "EVA", virgul = ",", durumstring, bitim = "/";
 
 void setup()
 {
   Serial.begin(9600);
+  Serial1.begin(9600);
   Serial2.begin(9600);
   Wire.begin();
   bme280.setI2CAddress(0x76); 
@@ -88,12 +89,14 @@ void loop()
     gpsZaman = millis(); 
     dorjiZaman = millis(); 
     irtifaZaman = millis(); 
+    bmpkalm = bmpkalman();
+    bmekalm = bmekalman();
     if(gpsZaman-eskiZaman1 > 1000)
     {  
       latitude = gps.location.lat(), 6;
       dtostrf(latitude, 9, 6, latchar);
-      longtitude = gps.location.lng(), 6;
-      dtostrf(longtitude, 9, 6, longchar);
+      longitude = gps.location.lng(), 6;
+      dtostrf(longitude, 9, 6, longchar);
       altitude = gps.altitude.meters(), 6;
       dtostrf(altitude, 6, 1, altchar);
       GpsEncode();
@@ -101,14 +104,23 @@ void loop()
     }
     if(dorjiZaman-eskiZaman2 > 1000)
     {
-      dorjifonk(); //dorji seri porttan aldığı veriyi direkt gönderiyor
+      Serial1.print(latitude,6);
+      Serial1.print(virgul);
+      Serial1.print(longitude,6);
+      Serial1.print(virgul);
+      Serial1.print(altitude,1);
+      Serial1.print(virgul);
+      Serial1.print(bmpkalm,1);
+      Serial1.print(virgul);
+      Serial1.print(bmekalm,1);
+      Serial1.println(bitim);
+      
       eskiZaman2 = dorjiZaman;
       //buzzerHigh();
     }
     if(irtifaZaman-eskiZaman3 > 1000)
     {
-      bmpkalm = bmpkalman();
-      bmekalm = bmekalman();
+
       dtostrf(bmpkalm, 6, 1, bmpchar);
       dtostrf(bmekalm, 6, 1, bmechar);
       Serial.print("BMP180 Kalman İrtifa: ");
@@ -235,11 +247,3 @@ void GpsEncode()
   Serial.print("LONG="); Serial.println(gps.location.lng(), 6);
   Serial.print("ALT="); Serial.println(gps.altitude.meters(), 6);
 }  
-
-void dorjifonk()
-{
-  durumstring = String(aktiflikDurumu);
-  //Verilerin karışmaması için EVA ile başlamayan string'leri okumayacak.
-  dorjiGonderim = "dorjiAdres + bosluk + latitude + bosluk + longtitude + bosluk + altitude + bosluk + bmpstring + bosluk + bmestring + aktiflik durumu";
-  //Serial.println(dorjiGonderim);
-}

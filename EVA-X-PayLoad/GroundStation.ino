@@ -3,6 +3,7 @@
 #include <SoftwareSerial.h>
 SoftwareSerial loraSerial(10, 11);
 LoRa_E32 e32ttl(&loraSerial);
+String value = ",";
 
 void setup()
 {
@@ -10,27 +11,32 @@ void setup()
   delay(100);
   e32ttl.begin();
   Serial.println();
+
 }
 typedef struct {
-byte altitude[5];
-byte latitude[10];
-byte longtitude[10];
+byte alt[7];
+byte lat[10];
+byte lng[10];
+byte irt[8];
+byte sic[6];
 } Signal;
-Signal rocket;
+Signal data;
 
 void loop()
 {
   if (e32ttl.available()  > 1){
     ResponseStructContainer rsc = e32ttl.receiveMessage(sizeof(Signal));
-    rocket = *(Signal*) rsc.data;
-    Serial.print(F("Altitude: "));
-    Serial.print(*(float*)rocket.altitude,6);
-
-    Serial.print(F(" Latitude: "));
-    Serial.println(*(float*)rocket.latitude,6);
-
-    Serial.print(F(" Longitude"));
-    Serial.println(*(float*)rocket.longtitude,6);
+    data = *(Signal*) rsc.data;
+    Serial.print(*(float*)data.alt,1);
+    Serial.print(value);
+    Serial.print(*(float*)data.lat,6);
+    Serial.print(value);
+    Serial.print(*(float*)data.lng,6);
+    Serial.print(value);
+    Serial.print(*(float*)data.irt,2);
+    Serial.print(value);
+    Serial.print(*(float*)data.sic,2);
+    Serial.println("/");
     rsc.close();
   }
 }

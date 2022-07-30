@@ -38,7 +38,7 @@ double latitude,longitude, altitude;
 
 //Telemetri Tanımlamaları
 char dorjiAdres[4] = "EVA", latchar[10], altchar[7], longchar[10], bmpchar[7], bmechar[7];
-String dorjiGonderim = "EVA", virgul = ",", durumstring, bitim = "/";
+String sifre = "EVA", virgul = ",", durumstring, bitim = "/";
 
 void setup()
 {
@@ -102,8 +102,10 @@ void loop()
       GpsEncode();
       eskiZaman1 = gpsZaman;
     }
-    if(dorjiZaman-eskiZaman2 > 1000)
+    if(dorjiZaman-eskiZaman2 > 1500)
     {
+      Serial1.print(sifre);
+      Serial1.print(virgul);
       Serial1.print(latitude,6);
       Serial1.print(virgul);
       Serial1.print(longitude,6);

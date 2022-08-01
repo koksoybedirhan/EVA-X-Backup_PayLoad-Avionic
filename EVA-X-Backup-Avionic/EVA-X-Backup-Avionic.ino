@@ -102,7 +102,7 @@ void loop()
       GpsEncode();
       eskiZaman1 = gpsZaman;
     }
-    if(dorjiZaman-eskiZaman2 > 1500)
+    if(dorjiZaman-eskiZaman2 > 1000)
     {
       Serial1.print(sifre);
       Serial1.print(virgul);

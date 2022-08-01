@@ -15,6 +15,7 @@ Adafruit_BMP280 bmp;
 
 float sicaklik, basinc, basincirtifa, kalman, s, i; 
 float denizbasinc = 1001.25; //aksaraya göre hesaplanacak.
+float alti;
 
 //lora paketi
 typedef struct {
@@ -75,8 +76,8 @@ double sicak()
 
 double irtifa()
 {
-  basinc = bmp.readPressure()/101325, 4;
-  basincirtifa = 44330*(1.0-pow(basinc/denizbasinc,0.1903));
-  kalman = kalmanIrtifa.updateEstimate(basincirtifa);
-  return kalman;
+  basinc = bmp.readPressure();
+  basinc /= 100;
+  basincirtifa = 44330 * (1.0 - pow(basinc / denizbasinc, 0.1903));
+  return basincirtifa;
 }

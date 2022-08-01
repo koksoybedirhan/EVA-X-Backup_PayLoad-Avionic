@@ -30,6 +30,7 @@ Signal data;
 void setup() 
 {
   Serial.begin(9600);
+  
   delay(500);
   Serial2.begin(9600);
   delay(500);
@@ -61,7 +62,7 @@ void loop()
       *(float*)(data.lng) = (float)gps.location.lat();
       *(float*)(data.irt) = (float)s;
       *(float*)(data.sic) = (float)i;
-      ResponseStatus rs = e32ttl.sendFixedMessage(0, 7, 17, &data, sizeof(Signal));
+      ResponseStatus rs = e32ttl.sendFixedMessage(0, 11, 21, &data, sizeof(Signal));
       Serial.println(rs.getResponseDescription());
       delay(4000);
     }

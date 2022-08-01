@@ -205,12 +205,10 @@ double bmp180fonk()
 {
   durum = bmp180.startTemperature();
   if (durum != 0) {
-    delay(1000);
     durum = bmp180.getTemperature(T);
     if (durum != 0) {
       durum = bmp180.startPressure(3);
       if (durum != 0) {
-        delay(durum);
         durum = bmp180.getPressure(bmp180basinc, T);
         if (durum != 0) {
           //Serial.print("Basınç: ");

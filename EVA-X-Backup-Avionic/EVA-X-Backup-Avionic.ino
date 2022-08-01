@@ -13,8 +13,8 @@ TinyGPSPlus gps;
 
 //Pinler
 int buzzerPin = 42; //Mega Pro'ya göre ayarlanacak
-int valf1 = 29; //Mega Pro'ya göre ayarlanacak
-int valf2 = 30; //Mega Pro'ya göre ayarlanacak
+#define anaRole 8
+#define dragRole 9
 
 //Tanımlar
 char durum;
@@ -48,8 +48,10 @@ void setup()
   Wire.begin();
   bme280.setI2CAddress(0x76); 
   pinMode(13, OUTPUT); // led yakarak hata bakma
-  pinMode(valf1, OUTPUT); //valf1
-  pinMode(valf2, OUTPUT); //valf2
+  pinMode(anaRole, OUTPUT); //anaRole
+  pinMode(dragRole, OUTPUT); //dragRole
+  digitalWrite(anaRole,HIGH);
+  digitalWrite(dragRole,HIGH);
   //Serial.print("Sensörler Başlatılıyor ");
   if(bme280.beginI2C() == false) 
   {
@@ -149,7 +151,7 @@ void ayrilmafonk()
     delay(5000); //Birinci ayrılma için 5 saniye bekleniyor. Eğer 5 saniye sonra hala ayrılma olmazsa ayrılma gerçekleşecek.
     if(bmekalm >= 3000 && bmekalm >= 3000)
     {
-      digitalWrite(valf1, HIGH); //2900 metreye kadar açık kalacak
+      digitalWrite(anaRole,LOW); //2900 metreye kadar açık kalacak
       Serial.println("First Seperation Done.");
       birinciayrilma = true;
       aktiflikDurumu = 2;
@@ -158,7 +160,7 @@ void ayrilmafonk()
   }
   else if(bmekalm <= 2900 && bmekalm <= 2900 && birinciayrilma == true)
   { //100 metreden sonra aktiflikler kaldırılacak.
-    digitalWrite(valf1, LOW);
+    digitalWrite(anaRole, HIGH);
     buzzerLow(); 
   }
   else if(zamanOlcme1 - zamanOlcme2 == 30000)
@@ -167,14 +169,14 @@ void ayrilmafonk()
   }
   else if(bmpkalm <= 500 && bmekalm <= 500 && birinciayrilma == true)//ikinci ayrılma
   {
-    digitalWrite(valf2, HIGH);
+    digitalWrite(dragRole, LOW);
     aktiflikDurumu = 4;
     Serial.println("500 meters detected with pressure, Second Seperation done");
     buzzerHigh(); // 500 metreden sonra yere düşünce bulması kolaylaştırılacak.
   }
   else if(bmpkalm <= 300 && bmekalm <= 300 && birinciayrilma == true)
   {
-    digitalWrite(valf2, LOW);
+    digitalWrite(dragRole, HIGH);
   }
 }
 

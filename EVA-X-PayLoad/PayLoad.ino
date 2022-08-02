@@ -28,6 +28,7 @@ byte lng[10];
 byte irt[8];
 byte sic[6];
 byte ne[6];
+byte bas[8];
 } Signal;
 Signal data;
 
@@ -66,6 +67,7 @@ void loop()
       *(float*)(data.irt) = (float)kalman;
       *(float*)(data.sic) = (float)sicaklik;
       *(float*)(data.ne) = (float)nem;
+      *(float*)(data.bas) = (float)basinc;
       ResponseStatus rs = e32ttl.sendFixedMessage(0, 11, 21, &data, sizeof(Signal));
       Serial.println(rs.getResponseDescription());
       delay(1000);

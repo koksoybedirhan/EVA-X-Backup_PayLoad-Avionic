@@ -48,8 +48,9 @@ void loop()
     {
       sicaklik = bme.readTemperature();
       basinc = bme.readPressure() / 100.0F;
-      basincirtifa = bme.readAltitude(denizseviyesi);
       nem = bme.readHumidity();
+      basincirtifa = bme.readAltitude(denizseviyesi);
+      kalman = kalmanIrtifa.updateEstimate(basincirtifa);
       String msg = Serial2.readStringUntil('\r');
       //Serial.println(msg);
       Serial.print("Latitude:"); Serial.print(gps.location.lat(), 6); Serial.print(" ");
@@ -57,17 +58,17 @@ void loop()
       Serial.print("Altitude:"); Serial.print(gps.altitude.meters(), 6); Serial.println(" ");
       Serial.print("Sicaklik: "); Serial.print(sicaklik); Serial.print(" derece ");
       Serial.print("Basinc: "); Serial.print(basinc); Serial.print(" hPa ");
-      Serial.print("Basinc İrtifa: "); Serial.print(basincirtifa); Serial.print(" metre ");
+      Serial.print("Basinc İrtifa: "); Serial.print(kalman); Serial.print(" metre ");
       Serial.print("Nem Yuzdesi: "); Serial.print(nem); Serial.print("% ");
       *(float*)(data.alt) = (float)gps.altitude.meters();
       *(float*)(data.lat) = (float)gps.location.lng();
       *(float*)(data.lng) = (float)gps.location.lat();
-      *(float*)(data.irt) = (float)basincirtifa;
+      *(float*)(data.irt) = (float)kalman;
       *(float*)(data.sic) = (float)sicaklik;
       *(float*)(data.ne) = (float)nem;
       ResponseStatus rs = e32ttl.sendFixedMessage(0, 11, 21, &data, sizeof(Signal));
       Serial.println(rs.getResponseDescription());
-      delay(4000);
+      delay(1000);
     }
   }
 }

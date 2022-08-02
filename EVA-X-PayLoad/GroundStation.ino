@@ -19,6 +19,8 @@ byte lat[10];
 byte lng[10];
 byte irt[8];
 byte sic[6];
+byte ne[6];
+byte bas[8];
 } Signal;
 Signal data;
 
@@ -36,6 +38,10 @@ void loop()
     Serial.print(*(float*)data.irt,2);
     Serial.print(value);
     Serial.print(*(float*)data.sic,2);
+    Serial.print(value);
+    Serial.print(*(float*)data.ne,2); 
+    Serial.print(value);
+    Serial.print(*(float*)data.bas,2);  
     Serial.println("/");
     rsc.close();
   }

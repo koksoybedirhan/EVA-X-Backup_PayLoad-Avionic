@@ -23,7 +23,7 @@ double T, bmp180basinc, bme280basinc, bmpmaks = 0;
 double bmp180convert, bmpkalmanolculenbasinc, bmekalmanolculenbasinc;
 int pos = 0; 
 double bmpbasincIrtifa, bmebasincdegeri;
-double bmpIrtifaDegeri, bmeIrtifaDegeri, Irtifafonk, denizbasinci = 966.6;
+double bmpIrtifaDegeri, bmeIrtifaDegeri, Irtifafonk, denizbasinci = 965.0;
 bool birinciayrilma = false;
 double bmekalm, bmpkalm, b;
 int eskiZaman1 = 0, ayrilmaEskiZaman = 0;

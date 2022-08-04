@@ -9,6 +9,8 @@
 BME280 bme280;
 SFE_BMP180 bmp180;
 SimpleKalmanFilter Kalmanbasinci(1, 1, 0.01);
+
+SimpleKalmanFilter Kalmanbasincibmp180(1, 1, 0.01);
 TinyGPSPlus gps;
 
 //Pinler
@@ -23,7 +25,7 @@ double T, bmp180basinc, bme280basinc, bmpmaks = 0;
 double bmp180convert, bmpkalmanolculenbasinc, bmekalmanolculenbasinc;
 int pos = 0; 
 double bmpbasincIrtifa, bmebasincdegeri;
-double bmpIrtifaDegeri, bmeIrtifaDegeri, Irtifafonk, denizbasinci = 965.0;
+double bmpIrtifaDegeri, bmeIrtifaDegeri, Irtifafonk, denizbasinci = 868.0;
 bool birinciayrilma = false;
 double bmekalm, bmpkalm, b;
 int eskiZaman1 = 0, ayrilmaEskiZaman = 0;
@@ -38,7 +40,7 @@ double latitude,longitude, altitude;
 
 //Telemetri Tanımlamaları
 char dorjiAdres[4] = "EVA", latchar[10], altchar[7], longchar[10], bmpchar[7], bmechar[7];
-String sifre = "EVA", virgul = ",", durumstring, bitim = "/";
+String sifre = "EVA", virgul = "*", durumstring, bitim = "/";
 
 void setup()
 {
@@ -106,8 +108,6 @@ void loop()
     }
     if(dorjiZaman-eskiZaman2 > 1000)
     {
-      Serial1.print(sifre);
-      Serial1.print(virgul);
       Serial1.print(latitude,6);
       Serial1.print(virgul);
       Serial1.print(longitude,6);
@@ -117,8 +117,8 @@ void loop()
       Serial1.print(bmpkalm,1);
       Serial1.print(virgul);
       Serial1.print(bmekalm,1);
-      Serial1.println(bitim);
-      
+      Serial.print(virgul);
+      Serial.println(aktiflikDurumu);
       eskiZaman2 = dorjiZaman;
       //buzzerHigh();
     }
@@ -192,7 +192,7 @@ double bmpkalman()
 {
   bmp180basinc = bmp180fonk();
   bmpIrtifaDegeri = bmp180.altitude(bmp180basinc,bmpbasincIrtifa);
-  bmpkalmanolculenbasinc = Kalmanbasinci.updateEstimate(bmpIrtifaDegeri);
+  bmpkalmanolculenbasinc = Kalmanbasincibmp180.updateEstimate(bmpIrtifaDegeri);
   return bmpkalmanolculenbasinc;
 }
 

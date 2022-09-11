@@ -1,3 +1,5 @@
+//Author: b1d0
+
 //Kütüphaneler
 #include <Wire.h>
 #include <SFE_BMP180.h>
